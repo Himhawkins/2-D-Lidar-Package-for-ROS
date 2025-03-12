@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+
+import rospy
+from std_msgs.msg import String
+import serial
+
+encoding= 'ascii' #intially this was utf-8
+
+def Process_and_Package(data):
+    # Ensure data is exactly 18 bytes
+    if len(data) != 18:
+        raise ValueError("Data must be exactly 18 bytes long")
+
+    # Check if the first two bytes are 89, 89
+    if data[0] != 89 or data[1] != 89:
+        raise ValueError("First two bytes must be 89, 89")
+
+    # Calculate distance from byte 3 and byte 4
+    distance = (data[3] * 256) + data[2]
+
+    # Extract angle from byte 5
+    angle = data[4] +data[5]*256
+
+    # Calculate angleX, angleY, angleZ, accX, accY, accZ
+    angleX = ((256 - data[6]) + ((256 - data[7]) * 256)) / 100.0
+
+    # Calculate angleY, angleZ, accX, accY, accZ normally
+    angleY = (data[8] + (data[9] * 256)) / 100.0
+    angleZ = (data[10] + (data[11] * 256)) / 100.0
+    accX = (data[12] + (data[13] * 256)) / 100.0
+    accY = (data[14] + (data[15] * 256)) / 100.0
+    accZ = (data[16] + (data[17] * 256)) / 100.0angleX = ((256 - data[6]) + ((256 - data[7]) * 256)) / 100.0
+    angleY = ((256 - data[8]) + ((256 - data[9]) * 256)) / 100.0
+    angleZ = ((256 - data[10]) + ((256 - data[11]) * 256)) / 100.0
+    accX = ((256 - data[12]) + ((256 - data[13]) * 256)) / 100.0
+    accY = ((256 - data[14]) + ((256 - data[15]) * 256)) / 100.0
+    accZ = ((256 - data[16]) + ((256 - data[17]) * 256)) / 100.0
+    # Return results in a dictionary
+    return {
+        "distance": distance,
+        "angle": angle,
+        "angleX": angleX,
+	"RAW": [data[6],data[7]],
+        "angleY": angleY,
+        "angleZ": angleZ,
+        "accX": accX,
+        "accY": accY,
+        "accZ": accZ
+    }
+
+def serial_publisher():
+    # Initialize the ROS node
+    rospy.init_node('serial_publisher', anonymous=True)
+    
+    # Create a publisher on the 'serial_data' topic
+    pub = rospy.Publisher('serial_data', String, queue_size=10)
+    
+    # Set the loop rate (10 Hz)
+    rate = rospy.Rate(10)
+    
+    # Open the serial port (adjust '/dev/ttyACM0' and baudrate as needed)
+    try:
+        ser = serial.Serial('/dev/ttyUSB5', 9600, timeout=1)
+        rospy.loginfo("Serial port opened successfully")
+    except serial.SerialException as e:
+        rospy.logerr(f"Failed to open serial port: {e}")
+        return
+    
+    while not rospy.is_shutdown():
+        try:
+            # Read data from the serial port
+            if ser.in_waiting > 0:
+                line = ser.read(18)
+                integers = [byte for byte in line]
+                rospy.loginfo(f"Read from serial: {Process_and_Package(integers)}")
+                
+                # Publish the data to the topic
+                pub.publish(line)
+        except Exception as e:
+            rospy.logerr(f"Error reading from serial port: {e}")
+        
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        serial_publisher()
+    except rospy.ROSInterruptException:
+        pass

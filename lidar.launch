@@ -1,0 +1,12 @@
+<launch>
+    <!-- Load robot description -->
+    <env name="LIBGL_ALWAYS_SOFTWARE" value="1" />
+    <param name="robot_description" command="cat '$(find serial_publisher)/lidar_viz.urdf'" />
+    
+    <node name="serial_data_publisher" pkg="serial_publisher" type="serial_publisher.py" output="screen" />
+	<node name="Lidar_data_publisher" pkg="serial_publisher" type="lidar_publisher.py" output="screen" />
+    <node name="ODOM_pub" pkg="serial_publisher" type="odom_publisher.py" output="screen" />
+    
+    <!-- Launch RViz -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find serial_publisher)/master_rviz_vis.rviz" />
+</launch>

@@ -1,0 +1,10 @@
+<robot name="LIDAR_SENSOR">
+<link name="lidarddd">
+  <visual>
+    <origin xyz="0 0 0" rpy="3.14 0.0 0.0"/>
+    <geometry>
+      <mesh filename="package://serial_publisher/meshes/m1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </visual>
+</link>
+</robot>
